@@ -1,0 +1,29 @@
+{
+  "name": "agentic-pi",
+  "version": "1.0.0",
+  "description": "Agentic Workflow Framework for pi — Orchestrator-by-default + 8 specialized subagents (planner/auditor/reviewer/builder-smart/builder-fast/finder/researcher/tester) + 5 slash commands. Port of jeanfbrito's Claude Code framework.",
+  "keywords": [
+    "pi-package",
+    "agentic",
+    "orchestrator",
+    "subagents",
+    "workflow"
+  ],
+  "license": "MIT",
+  "author": "Jean Brito",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jeanfbrito/agentic-pi"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/agentic-orchestrator.ts",
+      "./extensions/subagent/index.ts"
+    ],
+    "prompts": ["./prompts"]
+  }
+}
