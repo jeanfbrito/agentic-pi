@@ -139,15 +139,37 @@ Then `/reload`. Project state in `.claude/mytasks/` is untouched.
 
 ## Known issues
 
-### `/reload` doesn't fully refresh after package install (pi 0.70.2)
+### Interactive mode silently drops `tool_call` hooks from global extensions (pi 0.70.2)
 
-After running `pi install git:github.com/jeanfbrito/agentic-pi` (or any local-path install), **fully restart pi** (quit + relaunch) instead of using `/reload`.
+When pi has any package installed (this one or another), interactive TUI sessions stop firing `tool_call` event handlers from extensions placed at `~/.pi/agent/extensions/*.ts`. The package's own extensions still fire all events correctly — only **third-party single-file hooks** outside the package are affected.
 
-**Symptom:** in the running interactive session, auto-discovered extensions from `~/.pi/agent/extensions/*.ts` (e.g. third-party hooks like `rtk-rewrite`) stop firing on `tool_call`, while the package's own extensions and prompt templates load correctly.
+**Affects:** standalone bash-rewriting hooks like [`rtk-rewrite`](https://github.com/rtk-ai/rtk), permission gates, and similar tool-call interceptors when installed alongside this package.
 
-**Verification:** a fresh `pi -p "..."` from any cwd shows everything working; only the long-running interactive session held over from before the install is affected.
+**Does NOT affect:**
+- Package-bundled extensions (`agentic-orchestrator`, vendored `subagent`)
+- `before_agent_start`, `session_start`, slash commands, custom tools — all work normally
+- Fresh `pi -p "..."` print-mode calls — global extensions load correctly there
 
-**Workaround:** quit pi entirely (Ctrl+D twice / kill the process) and relaunch. Resumes the conversation, picks up the new package, and re-discovers global extensions.
+**Reproduce:**
+```bash
+pi install git:github.com/jeanfbrito/agentic-pi
+echo 'export default (pi) => pi.on("tool_call", (e) => console.error("FIRED", e.toolName));' > ~/.pi/agent/extensions/probe.ts
+# Restart pi (full quit + relaunch). Run any bash command.
+# In `pi -p`, stderr shows "FIRED bash". In interactive `pi`, silence.
+```
+
+**Tried-and-failed workarounds:**
+- `/reload` after install — no effect
+- Full process restart (`Ctrl+D` + relaunch) — no effect
+- Adding the extension to settings.json `extensions: [...]` array — no effect
+
+**Working workarounds:**
+- Run noisy commands via `pi -p "..."` shellouts when a hook is needed
+- Bundle the hook into a pi package (extensions inside packages fire fine)
+- Invoke the wrapped binary directly (e.g., `rtk git status` instead of `git status`)
+
+This is upstream pi behavior, not an agentic-pi bug. Worth filing at [mariozechner/pi/issues](https://github.com/mariozechner/pi/issues).
+
 
 ## Provenance
 
